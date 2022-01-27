@@ -24,7 +24,7 @@ public class UserDaoImpl implements UserDao {
         )) {
             // создали connection, создаем statement -> запрос к БД
             PreparedStatement preparedStatement = connection.
-                    prepareStatement("select count(*) cnt from schema_online_course_2.users where name = ? and password = ?");
+                    prepareStatement("select count(*) cnt from schema_online_course.users where name = ? and password = ?");
 
             // у prepareStatement проставляем параметры: 1-й - name, 2-й - password
             preparedStatement.setString(1, name);
@@ -45,12 +45,15 @@ public class UserDaoImpl implements UserDao {
                 return new User(name, password);
             }
 
-        } catch (UserNotFoundException userNotFoundException) {
+        } catch (UserNotFoundException userNotFoundException){
             System.out.println("Пользователь с таким именем и паролем не найден в БД!");
-            userNotFoundException.printStackTrace();
         }
-        // если userCount не равен 1, то кидаем ошибку
-        throw new UserNotFoundException("Пользователь с таким именем и паролем не найден в БД!");
+//        } catch (SQLException throwables) {
+//            throwables.printStackTrace();
+//        }
+//        // если userCount не равен 1, то кидаем ошибку
+//        throw new UserNotFoundException("Пользователь с таким именем и паролем не найден в БД!");
+        return null;
     }
 
     // метод по созданию нового пользователя
@@ -65,32 +68,15 @@ public class UserDaoImpl implements UserDao {
         )) {
             // создали connection, создаем statement -> запрос к БД
             PreparedStatement preparedStatement = connection.
-                    prepareStatement("select count(*) cnt from schema_online_course.users where name = ? and password = ?");
+                    prepareStatement("insert into schema_online_course.users(name, password) values (?, ?)");
 
             // у prepareStatement проставляем параметры: 1-й - name, 2-й - password
             preparedStatement.setString(1, newName);
             preparedStatement.setString(2, newPassword);
 
-            // далее у preparedStatement получить executeQuery и соответственно получить resultSet
-            ResultSet resultSet = preparedStatement.executeQuery();
-            // у resultSet выбрать next
-            resultSet.next();
+            preparedStatement.executeUpdate();
 
-            // взять resultSet -> getInt и передать сюда название колонки
-            // это у нас будет переменная userCount
-            int userCount = resultSet.getInt("cnt");
-
-            // проверяем значение userCount
-            if (userCount == 0) {
-                // если пользователя нет в БД, то создаем нового пользователя и вносим в БД
-                PreparedStatement preparedStatementNewUser = connection.prepareStatement("insert into schema_online_course.users(name, password) values (?, ?)");
-                preparedStatementNewUser.setString(1, newName);
-                preparedStatementNewUser.setString(2, newPassword);
-                ResultSet resultSetNewUser = preparedStatementNewUser.executeQuery();
-                resultSetNewUser.next();
-
-                return new User(newName, newPassword);
-            }
+            return new User(newName, newPassword);
 
         } catch (SQLException exception) {
             exception.printStackTrace();

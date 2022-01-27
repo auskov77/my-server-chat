@@ -18,37 +18,50 @@ public class ClientRunnable implements Runnable, Observer {
     private final ServerService serverService;
     private User user; // это наш пользователь
     private final UserDao userDao; // подключили сюда и еще проинициализировали
-    boolean isAutho = false;
-    boolean isReg = false;
+    private String messageFromClient;
+
 
     @SneakyThrows
     @Override
     public void run() {
         System.out.println("Client connected");
-        // перед добавлением проверять регистрацию
-
         // чтобы считывать сообщение с клиента есть BufferedReader
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream())); // чтобы считать что-то с клиента берем InputStream
 
+        // сообщение от клиента
+//        String messageFromClient;
+
+        // проверка на авторизацию
         if (authorization(bufferedReader)) {
-            // добавить Observer'a на сервере
             serverService.addObserver(this);
+
+            // отсылаем сообщение клиенту
+            notifyMe("Можете начинать общение!");
+
+            // будем считывать с помощью цикла while - писать бесконечно
+            // начинаем цикл, где проверяем сообщение от клиента
+            while ((messageFromClient = bufferedReader.readLine()) != null) {
+                System.out.println(user.getName() + ":" + messageFromClient);
+                // с сервера отправляем сообщение всем
+//                serverService.notifyObserver(user.getName() + ":" + messageFromClient);
+                // от клиента отправляем сообщение всем кроме себя
+                serverService.notifyObserverExceptMe(user.getName() + ":" + messageFromClient, this);
+            }
         } else if (registration(bufferedReader)) {
             serverService.addObserver(this);
-        } else {
-            throw new RuntimeException("Вы ввели что-то не то!");
-        }
 
-        // будем считывать с помощью цикла while - писать бесконечно
-        // сообщение от клиента
-        String messageFromClient;
-        // начинаем цикл, где проверяем сообщение от клиента, считываем readLine
-        while ((messageFromClient = bufferedReader.readLine()) != null) {
-            System.out.println(user.getName() + ":" + messageFromClient);
-            // с сервера отправляем сообщение всем
+            // отсылаем сообщение клиенту
+            notifyMe("Можете начинать общение!");
+
+            // будем считывать с помощью цикла while - писать бесконечно
+            // начинаем цикл, где проверяем сообщение от клиента
+            while ((messageFromClient = bufferedReader.readLine()) != null) {
+                System.out.println(user.getName() + ":" + messageFromClient);
+                // с сервера отправляем сообщение всем
 //                serverService.notifyObserver(user.getName() + ":" + messageFromClient);
-            // от клиента отправляем сообщение всем кроме себя
-            serverService.notifyObserverExceptMe(user.getName() + ":" + messageFromClient, this);
+                // от клиента отправляем сообщение всем кроме себя
+                serverService.notifyObserverExceptMe(user.getName() + ":" + messageFromClient, this);
+            }
         }
     }
 
@@ -56,44 +69,53 @@ public class ClientRunnable implements Runnable, Observer {
     @SneakyThrows
     private boolean authorization(BufferedReader bufferedReader) {
         // сообщение от клиента
-        String authorizationMessage;
+//        String authorizationMessage;
         // считываем authorizationMessage с помощью bufferedReader.readLine
-        while ((authorizationMessage = bufferedReader.readLine()) != null) {
+        while (true) {
             // !autho!login:password
             // делаем проверку
-            if (authorizationMessage.startsWith("!autho!")) { // если authorizationMessage начинается с !autho!, подставляем login и password
-                String login = authorizationMessage.substring(7).split(":")[0]; // substring - выделили подстроку, далее разбиваем строку по : методом split
-                String password = authorizationMessage.substring(7).split(":")[1]; // substring - выделили подстроку, далее разбиваем строку по : методом split
+            if ((messageFromClient = bufferedReader.readLine()) != null && messageFromClient.startsWith("!autho!")) { // если authorizationMessage начинается с !autho!, подставляем login и password
+                String login = messageFromClient.substring(7).split(":")[0]; // substring - выделили подстроку, далее разбиваем строку по : методом split
+                String password = messageFromClient.substring(7).split(":")[1]; // substring - выделили подстроку, далее разбиваем строку по : методом split
 
                 // должны у userDao вызывать соответствующий метод
                 // новому пользователю присваиваем логин и пассворд
                 user = userDao.findByNameAndPassword(login, password);
+                if (user != null){
+                    notifyMe("Вы авторизованы!");
+                } else {
+                    notifyMe("Вы не авторизованы: имя или пароль не совпадают!");
+                    continue;
+                }
+
                 return true; // все в порядке
             }
+            return false; // если false, то применить метод регистрации
         }
-        return false; // если false, то применить метод регистрации
     }
 
     // создаем метод регистрации
     @SneakyThrows
     private boolean registration(BufferedReader bufferedReader) {
         // сообщение от клиента
-        String registrationMessage;
+//        String registrationMessage;
         // считываем registrationMessage с помощью bufferedReader.readLine
-        while ((registrationMessage = bufferedReader.readLine()) != null) {
+        while (true) {
             // !reg!login:password
             // делаем проверку
-            if (registrationMessage.startsWith("!reg!")) { // если registrationMessage начинается с !reg!, подставляем newLogin и newPassword
-                String newLogin = registrationMessage.substring(5).split(":")[0]; // substring - выделили подстроку, далее разбиваем строку по : методом split
-                String newPassword = registrationMessage.substring(5).split(":")[1]; // substring - выделили подстроку, далее разбиваем строку по : методом split
+            if (messageFromClient.startsWith("!reg!")) { // если registrationMessage начинается с !reg!, подставляем login и password
+                String login = messageFromClient.substring(5).split(":")[0]; // substring - выделили подстроку, далее разбиваем строку по : методом split
+                String password = messageFromClient.substring(5).split(":")[1]; // substring - выделили подстроку, далее разбиваем строку по : методом split
 
                 // должны у userDao вызывать соответствующий метод
                 // новому пользователю присваиваем логин и пассворд
-                user = userDao.createNewUser(newLogin, newPassword);
+                user = userDao.createNewUser(login, password);
+                notifyMe("Вы зарегистрированы!");
                 return true; // все в порядке
+
             }
+            return false; // если false, то применить метод регистрации
         }
-        return false;
     }
 
     @SneakyThrows
