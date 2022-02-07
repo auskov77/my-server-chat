@@ -2,6 +2,7 @@ package ru.itsjava.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.apache.log4j.Logger;
 import ru.itsjava.dao.UserDao;
 import ru.itsjava.domain.User;
 
@@ -20,11 +21,18 @@ public class ClientRunnable implements Runnable, Observer {
     private final UserDao userDao; // подключили сюда и еще проинициализировали
     private String messageFromClient;
 
+    // Инициализация логера
+    private static final Logger log = Logger.getLogger(ClientRunnable.class);
+
 
     @SneakyThrows
     @Override
     public void run() {
         System.out.println("Client connected");
+
+        // логируем инфо
+        log.info("Старт клиента");
+
         // чтобы считывать сообщение с клиента есть BufferedReader
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream())); // чтобы считать что-то с клиента берем InputStream
 
@@ -83,11 +91,18 @@ public class ClientRunnable implements Runnable, Observer {
                 user = userDao.findByNameAndPassword(login, password);
                 if (user != null){
                     notifyMe("Вы авторизованы!");
+
+                    // логируем инфо
+                    log.info("Авторизация клиента " + user.getName());
+
                 } else {
                     notifyMe("Вы не авторизованы: имя или пароль не совпадают!");
+
+                    // логируем инфо
+                    log.info("Клиент не авторизован");
+
                     continue;
                 }
-
                 return true; // все в порядке
             }
             return false; // если false, то применить метод регистрации
@@ -111,9 +126,17 @@ public class ClientRunnable implements Runnable, Observer {
                 // новому пользователю присваиваем логин и пассворд
                 user = userDao.createNewUser(login, password);
                 notifyMe("Вы зарегистрированы!");
+
+                // логируем инфо
+                log.info("Регистрация клиента " + user.getName());
+
                 return true; // все в порядке
 
             }
+
+            // логируем инфо
+            log.info("Клиент не зарегистрирован");
+
             return false; // если false, то применить метод регистрации
         }
     }

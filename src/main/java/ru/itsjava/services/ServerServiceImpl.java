@@ -1,6 +1,7 @@
 package ru.itsjava.services;
 
 import lombok.SneakyThrows;
+import org.apache.log4j.Logger;
 import ru.itsjava.dao.UserDao;
 import ru.itsjava.dao.UserDaoImpl;
 import ru.itsjava.utils.Props;
@@ -16,11 +17,17 @@ public class ServerServiceImpl implements ServerService, Observable {
     public final List<Observer> observers = new ArrayList<>(); // массив, где хранятся наблюдатели - Observer'ы, те кто находится в чате
     private final UserDao userDao = new UserDaoImpl(new Props());
 
+    // Инициализация логера
+    private static final Logger log = Logger.getLogger(ServerServiceImpl.class);
+
     @SneakyThrows // обработка исключений
     @Override
     public void start() {
         ServerSocket serverSocket = new ServerSocket(PORT); // настраиваем соединение - создаем serverSocket
         System.out.println("== SERVER STARTS ==");
+
+        // логируем инфо
+        log.info("Старт сервера");
 
         // постоянно слушаем порт сервера 8081
         while (true) { // бесконечный цикл ожидания
