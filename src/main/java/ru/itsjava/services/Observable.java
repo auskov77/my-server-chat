@@ -7,4 +7,5 @@ public interface Observable {
     void deleteObserver(Observer observer); //удалить наблюдателя
     void notifyObserver(String message); // уведомить всех наблюдателей - разослать сообщение всем наблюдателям
     void notifyObserverExceptMe(String message, Observer observer); // уведомит всех наблюдателей, кроме себя
+    void writeIntoFileMessageFromClient(String message); //создание файла с сообщениями от клиента
 }

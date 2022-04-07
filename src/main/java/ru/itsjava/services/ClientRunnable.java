@@ -6,9 +6,7 @@ import org.apache.log4j.Logger;
 import ru.itsjava.dao.UserDao;
 import ru.itsjava.domain.User;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 @RequiredArgsConstructor
@@ -54,6 +52,7 @@ public class ClientRunnable implements Runnable, Observer {
 //                serverService.notifyObserver(user.getName() + ":" + messageFromClient);
                 // от клиента отправляем сообщение всем кроме себя
                 serverService.notifyObserverExceptMe(user.getName() + ":" + messageFromClient, this);
+                serverService.writeIntoFileMessageFromClient(user.getName() + ":" + messageFromClient);
             }
         } else if (registration(bufferedReader)) {
             serverService.addObserver(this);
@@ -69,6 +68,7 @@ public class ClientRunnable implements Runnable, Observer {
 //                serverService.notifyObserver(user.getName() + ":" + messageFromClient);
                 // от клиента отправляем сообщение всем кроме себя
                 serverService.notifyObserverExceptMe(user.getName() + ":" + messageFromClient, this);
+                serverService.writeIntoFileMessageFromClient(user.getName() + ":" + messageFromClient);
             }
         }
     }
@@ -150,4 +150,5 @@ public class ClientRunnable implements Runnable, Observer {
         clientWriter.println(message); // message - это наше сообщение
         clientWriter.flush();
     }
+
 }
